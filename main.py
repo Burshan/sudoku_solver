@@ -60,6 +60,17 @@ def is_valid(board, value, pos):
     return True
 
 
+def input_checker(board):
+    """
+    Checks if the input board that provided is valid
+    :param board: The board to check on
+    :return: True if valid, false if not.
+    """
+    if not find_empty(board):
+        return True
+    return False
+
+
 def find_empty(board):
     """
     Looking for an empty cell in the board, if their isn't return None.
@@ -100,7 +111,10 @@ def game_maneger():
     print_board(initial_board)
     solve(initial_board)
     print("\nSolved: \n")
-    print_board(initial_board)
+    if not input_checker(initial_board):
+        print("Sorry, the board you provided is not valid! ")
+    else:
+        print_board(initial_board)
 
 
 if __name__ == '__main__':
