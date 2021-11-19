@@ -1,3 +1,12 @@
+import os
+
+import cv2
+import imutils
+import numpy as np
+from imutils import contours
+from imutils.perspective import four_point_transform
+from skimage.segmentation import clear_border
+
 initial_board = [
     [7, 8, 5, 4, 0, 0, 1, 2, 0],
     [6, 0, 0, 0, 7, 5, 0, 0, 9],
@@ -9,6 +18,39 @@ initial_board = [
     [1, 2, 0, 0, 0, 7, 4, 0, 0],
     [0, 4, 9, 2, 0, 6, 0, 0, 7]
 ]
+
+
+def board_extractor():
+    cv2.namedWindow("Sudoku")
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (7, 7), 3)
+        thresh = cv2.adaptiveThreshold(blurred, 255,
+                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        thresh = cv2.bitwise_not(thresh)
+        cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+                                cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+        puzzleCnt = None
+        # loop over the contours
+        for c in cnts:
+            # approximate the contour
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            if len(approx) == 4:
+                puzzleCnt = approx
+                break
+        output = frame.copy()
+        cv2.drawContours(output, [puzzleCnt], -1, (0, 255, 0), 2)
+
+        puzzle = four_point_transform(frame, puzzleCnt.reshape(4, 2))
+        warped = four_point_transform(gray, puzzleCnt.reshape(4, 2))
+        cv2.imshow("Puzzle Transform", puzzle)
+        cv2.waitKey(1)
+        return (puzzle, warped)
 
 
 def solve(board):
@@ -103,7 +145,7 @@ def print_board(board):
                 print(str(board[i][j]) + " ", end="")
 
 
-def game_maneger():
+def game_manager():
     """
     Starts the game and controls the functions.
     """
@@ -118,4 +160,5 @@ def game_maneger():
 
 
 if __name__ == '__main__':
-    game_maneger()
+    # game_manager()
+    board_extractor()
